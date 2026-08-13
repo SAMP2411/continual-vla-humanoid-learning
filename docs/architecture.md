@@ -13,3 +13,9 @@ The planned final backend is deliberately separate: live simulator camera and la
 inputs will be converted for a documented, genuinely pretrained VLA; LoRA will target
 named modules in that model; actions will drive a humanoid upper-body embodiment.
 No final-backend integration is present yet.
+
+Run management is shared independently of a backend: `lifelong_vla.runs` creates a
+unique directory, snapshots and hashes the resolved configuration, and writes an atomic
+`COMPLETE` marker only after metrics, raw reference records, and plot output exist.
+`lifelong_vla.records` defines append-only JSONL records. These records are explicitly
+labelled as reference-backend evidence and cannot be used as simulator benchmark data.

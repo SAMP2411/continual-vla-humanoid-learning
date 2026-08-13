@@ -8,6 +8,7 @@ import json
 import os
 import platform
 import shutil
+import subprocess
 from pathlib import Path
 
 import torch
@@ -16,11 +17,17 @@ import torch
 def installed_ram_bytes() -> int | None:
     if os.name == "nt":
         class MemoryStatus(ctypes.Structure):
-            _fields_ = [("length", ctypes.c_ulong), ("memory_load", ctypes.c_ulong),
-                       ("total_physical", ctypes.c_ulonglong), ("available_physical", ctypes.c_ulonglong),
-                       ("total_page_file", ctypes.c_ulonglong), ("available_page_file", ctypes.c_ulonglong),
-                       ("total_virtual", ctypes.c_ulonglong), ("available_virtual", ctypes.c_ulonglong),
-                       ("available_extended_virtual", ctypes.c_ulonglong)]
+            _fields_ = [
+                ("length", ctypes.c_ulong),
+                ("memory_load", ctypes.c_ulong),
+                ("total_physical", ctypes.c_ulonglong),
+                ("available_physical", ctypes.c_ulonglong),
+                ("total_page_file", ctypes.c_ulonglong),
+                ("available_page_file", ctypes.c_ulonglong),
+                ("total_virtual", ctypes.c_ulonglong),
+                ("available_virtual", ctypes.c_ulonglong),
+                ("available_extended_virtual", ctypes.c_ulonglong),
+            ]
         status = MemoryStatus()
         status.length = ctypes.sizeof(status)
         ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status))
@@ -30,13 +37,46 @@ def installed_ram_bytes() -> int | None:
     return None
 
 
+def nvidia_smi_gpus() -> list[dict[str, object]]:
+    """Return physical NVIDIA GPU information even with a CPU-only torch wheel."""
+    executable = shutil.which("nvidia-smi")
+    if not executable:
+        return []
+    result = subprocess.run(
+        [
+            executable,
+            "--query-gpu=name,memory.total,driver_version",
+            "--format=csv,noheader,nounits",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    if result.returncode:
+        return []
+    gpus = []
+    for line in result.stdout.splitlines():
+        fields = [field.strip() for field in line.split(",")]
+        if len(fields) == 3:
+            gpus.append(
+                {
+                    "name": fields[0],
+                    "vram_bytes": int(fields[1]) * 1024**2,
+                    "driver": fields[2],
+                }
+            )
+    return gpus
+
+
 def report() -> dict:
     cuda = torch.cuda.is_available()
-    gpu = []
+    gpu = nvidia_smi_gpus()
     if cuda:
+        torch_gpu_names = {entry["name"] for entry in gpu}
         for index in range(torch.cuda.device_count()):
             properties = torch.cuda.get_device_properties(index)
-            gpu.append({"name": properties.name, "vram_bytes": properties.total_memory})
+            if properties.name not in torch_gpu_names:
+                gpu.append({"name": properties.name, "vram_bytes": properties.total_memory})
     return {
         "os": platform.platform(),
         "python": platform.python_version(),

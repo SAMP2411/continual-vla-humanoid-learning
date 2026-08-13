@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import json
 import platform
 import random
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
@@ -20,7 +20,9 @@ from torch.utils.data import DataLoader
 from .data import ACTIONS, STAGES, SyntheticManipulationDataset
 from .metrics import summarize
 from .model import TinyVLAPolicy
+from .records import ReferenceEvaluationRecord, append_jsonl
 from .replay import ReplayBuffer
+from .runs import create_run_directory, mark_complete
 
 REQUIRED_CONFIG = {
     "seed", "image_size", "train_samples_per_action", "test_samples_per_action",
@@ -34,7 +36,15 @@ def validate_config(config: dict) -> None:
     missing = REQUIRED_CONFIG - config.keys()
     if missing:
         raise ValueError(f"missing configuration keys: {sorted(missing)}")
-    for key in ("image_size", "train_samples_per_action", "test_samples_per_action", "batch_size", "epochs_per_stage", "lora_rank"):
+    positive_ints = (
+        "image_size",
+        "train_samples_per_action",
+        "test_samples_per_action",
+        "batch_size",
+        "epochs_per_stage",
+        "lora_rank",
+    )
+    for key in positive_ints:
         if not isinstance(config[key], int) or config[key] <= 0:
             raise ValueError(f"{key} must be a positive integer")
     if config["replay_capacity"] < 0 or not 0 <= config["replay_ratio"] <= 1:
@@ -49,17 +59,8 @@ def set_deterministic_seed(seed: int) -> None:
 
 def make_run_directory(output_dir: str | Path) -> Path:
     """Create a unique, non-overwriting result directory for one invocation."""
-    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    root = Path(output_dir)
-    for suffix in range(1000):
-        label = f"reference-{stamp}" if suffix == 0 else f"reference-{stamp}-{suffix}"
-        run_dir = root / label
-        try:
-            run_dir.mkdir(parents=True, exist_ok=False)
-            return run_dir
-        except FileExistsError:
-            continue
-    raise RuntimeError("could not allocate a unique run directory")
+    # Compatibility helper for callers that only need an empty unique directory.
+    return create_run_directory(output_dir, {}, kind="reference")
 
 
 def evaluate(model: nn.Module, datasets: list[SyntheticManipulationDataset]) -> list[float]:
@@ -164,16 +165,31 @@ def main() -> None:
     with open(args.config, "r", encoding="utf-8") as stream:
         config = yaml.safe_load(stream)
     validate_config(config)
-    output = make_run_directory(config["output_dir"])
-    with open(output / "config.yaml", "w", encoding="utf-8") as stream:
-        yaml.safe_dump(config, stream, sort_keys=True)
+    output = create_run_directory(config["output_dir"], config)
     results = {
         "sequential_peft": run_method(config, use_replay=False),
         "peft_with_replay": run_method(config, use_replay=True),
     }
     with open(output / "metrics.json", "w", encoding="utf-8") as stream:
-        json.dump({"config": config, "runtime": {"python": platform.python_version(), "torch": torch.__version__, "device": "cpu"}, "results": results}, stream, indent=2)
+        payload = {
+            "config": config,
+            "runtime": {
+                "python": platform.python_version(),
+                "torch": torch.__version__,
+                "device": "cpu",
+            },
+            "results": results,
+        }
+        json.dump(payload, stream, indent=2)
+    for method, value in results.items():
+        for stage, scores in enumerate(value["accuracy_matrix"], start=1):
+            for task, score in enumerate(scores, start=1):
+                append_jsonl(output / "reference_evaluations.jsonl", ReferenceEvaluationRecord(
+                    method=method, stage=stage, task=f"stage_{task}", accuracy=score,
+                    replay_occupancy=value["replay_occupancy"],
+                ))
     plot_results(results, output / "comparison.png")
+    mark_complete(output)
     print(json.dumps({"run_dir": str(output), "results": results}, indent=2))
 
 

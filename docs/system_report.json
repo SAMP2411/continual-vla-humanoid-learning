@@ -4,7 +4,13 @@
   "pytorch": "2.13.0+cpu",
   "cuda_available": false,
   "cuda_version": null,
-  "gpu": [],
+  "gpu": [
+    {
+      "name": "NVIDIA GeForce GTX 1050 Ti",
+      "vram_bytes": 4294967296,
+      "driver": "581.57"
+    }
+  ],
   "ram_bytes": 17014509568,
-  "disk_free_bytes": 294755483648
+  "disk_free_bytes": 295647010816
 }
