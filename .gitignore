@@ -4,4 +4,6 @@ __pycache__/
 .pytest_cache/
 results/*
 !results/.gitkeep
+assets/
+checkpoints/
 inst.md

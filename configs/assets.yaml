@@ -1,0 +1,15 @@
+# Fill immutable revisions, direct artifact URLs, and SHA-256 values only after
+# the GPU environment resolves the public release. The downloader rejects blanks.
+files:
+  - name: smolvla_arena_gr1_microwave
+    url: ""
+    path: checkpoints/smolvla-arena-gr1-microwave/model.safetensors
+    sha256: ""
+    revision: ""
+    license: ""
+  - name: isaaclab_arena_gr1_assets
+    url: ""
+    path: assets/isaaclab-arena-gr1/manifest.json
+    sha256: ""
+    revision: ""
+    license: ""

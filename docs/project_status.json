@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "last_verified_commit": "3f66794",
+  "last_verified_commit": "49da810",
   "last_verified_at": "2026-08-14T01:05:00+02:00",
   "phases": {
     "0_repository_audit": {"status": "passed", "evidence": [".gitignore", "docs/system_report.json", "tests/"]},
     "1_local_preparation": {"status": "in_progress", "evidence": ["docs/local_setup.md", "docs/system_report.json"], "blocker": "WSL distribution enumeration returns E_ACCESSDENIED."},
     "2_engineering_baseline": {"status": "in_progress", "evidence": ["configs/debug.yaml", "lifelong_vla/train.py", ".github/workflows/ci.yml"]},
     "3_gpu_environment": {"status": "blocked", "blocker": "Local GTX 1050 Ti has 4 GB VRAM; final stack requires a GPU Linux worker."},
-    "4_assets_checkpoint": {"status": "pending"}, "5_pretrained_inference": {"status": "pending"}, "6_humanoid_tasks": {"status": "pending"}, "7_dataset": {"status": "pending"}, "8_real_peft": {"status": "pending"}, "9_experience_replay": {"status": "pending"},
+    "4_assets_checkpoint": {"status": "in_progress", "evidence": ["scripts/download_assets.py", "configs/assets.yaml"]}, "5_pretrained_inference": {"status": "pending"}, "6_humanoid_tasks": {"status": "pending"}, "7_dataset": {"status": "pending"}, "8_real_peft": {"status": "pending"}, "9_experience_replay": {"status": "pending"},
     "10_protocol": {"status": "in_progress", "evidence": ["docs/experiment_protocol.md"]}, "11_benchmark": {"status": "pending"}, "12_statistics": {"status": "pending"}, "13_speech": {"status": "pending"}, "14_reproducibility": {"status": "pending"}, "15_resume_release": {"status": "pending"}
   },
   "binary_gates": {
