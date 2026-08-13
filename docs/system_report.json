@@ -1,0 +1,10 @@
+{
+  "os": "Windows-10-10.0.26200-SP0",
+  "python": "3.10.11",
+  "pytorch": "2.13.0+cpu",
+  "cuda_available": false,
+  "cuda_version": null,
+  "gpu": [],
+  "ram_bytes": 17014509568,
+  "disk_free_bytes": 294755483648
+}

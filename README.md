@@ -83,7 +83,7 @@ final accuracy on that task.
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m lifelong_vla.train --config configs/quick.yaml
+python -m lifelong_vla.train --config configs/debug.yaml
 ```
 
 Run the tests:
@@ -92,12 +92,23 @@ Run the tests:
 python -m unittest discover -s tests -v
 ```
 
-The training command writes JSON metrics and a comparison plot into `results/`.
+The training command creates a unique `results/reference-.../` directory containing a
+config snapshot, JSON metrics, and a comparison plot. It never overwrites a prior run.
+Use `configs/benchmark.yaml` only for the larger compact-reference run; neither config
+is a final humanoid benchmark.
+
+Record the current machine before selecting a simulator/VLA stack:
+
+```bash
+python scripts/system_report.py --output docs/system_report.json
+```
 
 ## Repository structure
 
 ```text
 configs/                 Experiment settings
+docs/                    Verified scope, architecture, decisions, and limitations
+scripts/system_report.py Hardware and PyTorch capability report
 lifelong_vla/
   data.py                Deterministic synthetic scenes and commands
   model.py               Multimodal policy and LoRA linear layer

@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
+import platform
 import random
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import torch
 import yaml
@@ -17,6 +21,45 @@ from .data import ACTIONS, STAGES, SyntheticManipulationDataset
 from .metrics import summarize
 from .model import TinyVLAPolicy
 from .replay import ReplayBuffer
+
+REQUIRED_CONFIG = {
+    "seed", "image_size", "train_samples_per_action", "test_samples_per_action",
+    "batch_size", "epochs_per_stage", "learning_rate", "replay_capacity",
+    "replay_ratio", "lora_rank", "lora_alpha", "output_dir",
+}
+
+
+def validate_config(config: dict) -> None:
+    """Reject incomplete or nonsensical reference-experiment configurations."""
+    missing = REQUIRED_CONFIG - config.keys()
+    if missing:
+        raise ValueError(f"missing configuration keys: {sorted(missing)}")
+    for key in ("image_size", "train_samples_per_action", "test_samples_per_action", "batch_size", "epochs_per_stage", "lora_rank"):
+        if not isinstance(config[key], int) or config[key] <= 0:
+            raise ValueError(f"{key} must be a positive integer")
+    if config["replay_capacity"] < 0 or not 0 <= config["replay_ratio"] <= 1:
+        raise ValueError("replay capacity must be non-negative and replay ratio must be in [0, 1]")
+
+
+def set_deterministic_seed(seed: int) -> None:
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.use_deterministic_algorithms(True, warn_only=True)
+
+
+def make_run_directory(output_dir: str | Path) -> Path:
+    """Create a unique, non-overwriting result directory for one invocation."""
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    root = Path(output_dir)
+    for suffix in range(1000):
+        label = f"reference-{stamp}" if suffix == 0 else f"reference-{stamp}-{suffix}"
+        run_dir = root / label
+        try:
+            run_dir.mkdir(parents=True, exist_ok=False)
+            return run_dir
+        except FileExistsError:
+            continue
+    raise RuntimeError("could not allocate a unique run directory")
 
 
 def evaluate(model: nn.Module, datasets: list[SyntheticManipulationDataset]) -> list[float]:
@@ -63,8 +106,7 @@ def train_stage(
 
 
 def run_method(config: dict, use_replay: bool) -> dict:
-    torch.manual_seed(config["seed"])
-    random.seed(config["seed"])
+    set_deterministic_seed(config["seed"])
     model = TinyVLAPolicy(
         num_actions=len(ACTIONS), rank=config["lora_rank"], alpha=config["lora_alpha"]
     )
@@ -121,16 +163,18 @@ def main() -> None:
     args = parser.parse_args()
     with open(args.config, "r", encoding="utf-8") as stream:
         config = yaml.safe_load(stream)
-    output = Path(config["output_dir"])
-    output.mkdir(parents=True, exist_ok=True)
+    validate_config(config)
+    output = make_run_directory(config["output_dir"])
+    with open(output / "config.yaml", "w", encoding="utf-8") as stream:
+        yaml.safe_dump(config, stream, sort_keys=True)
     results = {
         "sequential_peft": run_method(config, use_replay=False),
         "peft_with_replay": run_method(config, use_replay=True),
     }
     with open(output / "metrics.json", "w", encoding="utf-8") as stream:
-        json.dump({"config": config, "results": results}, stream, indent=2)
+        json.dump({"config": config, "runtime": {"python": platform.python_version(), "torch": torch.__version__, "device": "cpu"}, "results": results}, stream, indent=2)
     plot_results(results, output / "comparison.png")
-    print(json.dumps(results, indent=2))
+    print(json.dumps({"run_dir": str(output), "results": results}, indent=2))
 
 
 if __name__ == "__main__":
