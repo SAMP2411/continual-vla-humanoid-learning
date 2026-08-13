@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lifelong-vla-prototype"
+version = "0.1.0"
+description = "A compact continual-learning benchmark for a VLA-style robot policy"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Samarth Patel"}]
+dependencies = [
+  "torch>=2.2,<3",
+  "PyYAML>=6.0,<7",
+  "matplotlib>=3.8,<4",
+]
+
+[tool.setuptools.packages.find]
+include = ["lifelong_vla*"]
