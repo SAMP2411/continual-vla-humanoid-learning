@@ -1,16 +1,18 @@
 {
-  "schema_version": 1,
-  "last_verified_commit": "49da810",
-  "last_verified_at": "2026-08-14T01:05:00+02:00",
-  "phases": {
-    "0_repository_audit": {"status": "passed", "evidence": [".gitignore", "docs/system_report.json", "tests/"]},
-    "1_local_preparation": {"status": "in_progress", "evidence": ["docs/local_setup.md", "docs/system_report.json"], "blocker": "WSL distribution enumeration returns E_ACCESSDENIED."},
-    "2_engineering_baseline": {"status": "in_progress", "evidence": ["configs/debug.yaml", "lifelong_vla/train.py", ".github/workflows/ci.yml"]},
-    "3_gpu_environment": {"status": "blocked", "blocker": "Local GTX 1050 Ti has 4 GB VRAM; final stack requires a GPU Linux worker."},
-    "4_assets_checkpoint": {"status": "in_progress", "evidence": ["scripts/download_assets.py", "configs/assets.yaml"]}, "5_pretrained_inference": {"status": "pending"}, "6_humanoid_tasks": {"status": "pending"}, "7_dataset": {"status": "pending"}, "8_real_peft": {"status": "pending"}, "9_experience_replay": {"status": "pending"},
-    "10_protocol": {"status": "in_progress", "evidence": ["docs/experiment_protocol.md"]}, "11_benchmark": {"status": "pending"}, "12_statistics": {"status": "pending"}, "13_speech": {"status": "pending"}, "14_reproducibility": {"status": "pending"}, "15_resume_release": {"status": "pending"}
-  },
-  "binary_gates": {
-    "default_branch_clean_and_ci": "pending", "final_system_readme": "pending", "pretrained_vla_loaded": "pending", "simulator_camera_language_action": "pending", "humanoid_actions": "pending", "three_achievable_tasks": "pending", "real_peft_freezing": "pending", "sequential_peft_three_seeds": "pending", "replay_three_seeds": "pending", "thirty_episode_cells": "pending", "metrics_saved": "pending", "raw_evidence": "pending", "statistics_regenerate": "pending", "speech_demo": "pending", "clean_install": "pending", "limitations_and_failures": "pending", "resume_evidence": "pending", "tagged_release": "pending"
+  "schema_version": 2,
+  "scope": "CPU-compatible compact synthetic continual vision-language policy benchmark",
+  "last_verified_at": "2026-09-04",
+  "gates": {
+    "local_lint_unit_and_smoke": {"status": "passed", "evidence": [".github/workflows/ci.yml", "tests/", "configs/debug.yaml"]},
+    "accurate_readme": {"status": "passed", "evidence": ["README.md", "docs/scope_change.md"]},
+    "three_stages_lora_replay": {"status": "passed", "evidence": ["lifelong_vla/data.py", "lifelong_vla/model.py", "lifelong_vla/replay.py"]},
+    "three_seed_methods": {"status": "passed", "evidence": ["configs/benchmark.yaml", "results/summary.json"]},
+    "held_out_coverage": {"status": "passed", "evidence": ["configs/benchmark.yaml", "results/summary.json"]},
+    "raw_records_and_artifacts": {"status": "passed", "evidence": ["lifelong_vla/records.py", "lifelong_vla/runs.py", "results/summary.json"]},
+    "regenerated_summary": {"status": "passed", "evidence": ["scripts/make_report.py", "results/summary.csv", "results/summary.json"]},
+    "metric_fixtures": {"status": "passed", "evidence": ["tests/test_metrics.py", "tests/test_model.py"]},
+    "limitations_and_scope": {"status": "passed", "evidence": ["docs/limitations.md", "docs/scope_change.md"]},
+    "resume_evidence": {"status": "passed", "evidence": ["docs/resume_evidence.md"]},
+    "clean_branch_ci_and_release": {"status": "in_progress", "blocker": "Changes must be committed, pushed, remotely validated, and tagged."}
   }
 }

@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+message: "If you use this compact benchmark, please cite this repository."
+title: "Compact Continual Vision-Language Policy Benchmark"
+type: software
+authors:
+  - family-names: Patel
+    given-names: Samarth
+license: MIT

@@ -6,6 +6,7 @@ import argparse
 import json
 import platform
 import random
+import time
 from pathlib import Path
 
 import matplotlib
@@ -20,7 +21,7 @@ from torch.utils.data import DataLoader
 from .data import ACTIONS, STAGES, SyntheticManipulationDataset
 from .metrics import summarize
 from .model import TinyVLAPolicy
-from .records import ReferenceEvaluationRecord, append_jsonl
+from .records import EvaluationRecord, append_jsonl
 from .replay import ReplayBuffer
 from .runs import create_run_directory, mark_complete
 
@@ -63,18 +64,38 @@ def make_run_directory(output_dir: str | Path) -> Path:
     return create_run_directory(output_dir, {}, kind="reference")
 
 
-def evaluate(model: nn.Module, datasets: list[SyntheticManipulationDataset]) -> list[float]:
+def evaluate(
+    model: nn.Module,
+    datasets: list[SyntheticManipulationDataset],
+    method: str,
+    train_seed: int,
+    stage: int,
+) -> tuple[list[float], list[EvaluationRecord]]:
     model.eval()
     scores = []
+    records = []
     with torch.no_grad():
-        for dataset in datasets:
+        for task_index, dataset in enumerate(datasets, start=1):
             correct = total = 0
             for images, tokens, labels in DataLoader(dataset, batch_size=64):
+                started = time.perf_counter()
                 predictions = model(images, tokens).argmax(dim=1)
+                latency_ms = (time.perf_counter() - started) * 1000 / labels.numel()
                 correct += int((predictions == labels).sum())
                 total += labels.numel()
+                records.extend(
+                    EvaluationRecord(
+                        method=method,
+                        train_seed=train_seed,
+                        stage=stage,
+                        task=f"stage_{task_index}",
+                        success=bool(prediction == label),
+                        latency_ms=latency_ms,
+                    )
+                    for prediction, label in zip(predictions.tolist(), labels.tolist())
+                )
             scores.append(correct / max(total, 1))
-    return scores
+    return scores, records
 
 
 def train_stage(
@@ -106,7 +127,7 @@ def train_stage(
         replay.add(item)
 
 
-def run_method(config: dict, use_replay: bool) -> dict:
+def run_method(config: dict, use_replay: bool, method: str) -> dict:
     set_deterministic_seed(config["seed"])
     model = TinyVLAPolicy(
         num_actions=len(ACTIONS), rank=config["lora_rank"], alpha=config["lora_alpha"]
@@ -125,6 +146,7 @@ def run_method(config: dict, use_replay: bool) -> dict:
         for stage, actions in enumerate(STAGES)
     ]
     matrix = []
+    evaluation_records = []
     for stage, actions in enumerate(STAGES):
         train_set = SyntheticManipulationDataset(
             actions,
@@ -133,12 +155,17 @@ def run_method(config: dict, use_replay: bool) -> dict:
             config["seed"] + stage,
         )
         train_stage(model, train_set, replay, config, use_replay)
-        matrix.append(evaluate(model, test_sets[: stage + 1]))
+        scores, records = evaluate(
+            model, test_sets[: stage + 1], method, config["seed"], stage + 1
+        )
+        matrix.append(scores)
+        evaluation_records.extend(records)
     return {
         "accuracy_matrix": matrix,
         "summary": summarize(matrix),
         "parameters": model.parameter_counts(),
         "replay_occupancy": len(replay),
+        "evaluation_records": evaluation_records,
     }
 
 
@@ -167,8 +194,14 @@ def main() -> None:
     validate_config(config)
     output = create_run_directory(config["output_dir"], config)
     results = {
-        "sequential_peft": run_method(config, use_replay=False),
-        "peft_with_replay": run_method(config, use_replay=True),
+        "sequential_peft": run_method(config, use_replay=False, method="sequential_peft"),
+        "sequential_peft_replay": run_method(
+            config, use_replay=True, method="sequential_peft_replay"
+        ),
+    }
+    serializable_results = {
+        method: {key: value for key, value in result.items() if key != "evaluation_records"}
+        for method, result in results.items()
     }
     with open(output / "metrics.json", "w", encoding="utf-8") as stream:
         payload = {
@@ -178,19 +211,15 @@ def main() -> None:
                 "torch": torch.__version__,
                 "device": "cpu",
             },
-            "results": results,
+            "results": serializable_results,
         }
         json.dump(payload, stream, indent=2)
-    for method, value in results.items():
-        for stage, scores in enumerate(value["accuracy_matrix"], start=1):
-            for task, score in enumerate(scores, start=1):
-                append_jsonl(output / "reference_evaluations.jsonl", ReferenceEvaluationRecord(
-                    method=method, stage=stage, task=f"stage_{task}", accuracy=score,
-                    replay_occupancy=value["replay_occupancy"],
-                ))
-    plot_results(results, output / "comparison.png")
+    for value in results.values():
+        for record in value["evaluation_records"]:
+            append_jsonl(output / "evaluation_records.jsonl", record)
+    plot_results(serializable_results, output / "comparison.png")
     mark_complete(output)
-    print(json.dumps({"run_dir": str(output), "results": results}, indent=2))
+    print(json.dumps({"run_dir": str(output), "results": serializable_results}, indent=2))
 
 
 if __name__ == "__main__":

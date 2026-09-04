@@ -4,6 +4,15 @@ __pycache__/
 .pytest_cache/
 results/*
 !results/.gitkeep
+!results/summary.csv
+!results/summary.json
+!results/forgetting_comparison.png
+!results/reference-20260904T073119155400Z/
+!results/reference-20260904T073119155400Z/**
+!results/reference-20260904T073127397409Z/
+!results/reference-20260904T073127397409Z/**
+!results/reference-20260904T073134186640Z/
+!results/reference-20260904T073134186640Z/**
 assets/
 checkpoints/
 inst.md

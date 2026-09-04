@@ -1,6 +1,7 @@
 # Limitations
 
-The reference backend uses generated images, templated text, and five discrete actions.
-It has no live camera, simulator, humanoid embodiment, pretrained VLA weights, speech
-recognition, dataset provenance, or headline benchmark results. It is suitable only for
-engineering validation of the compact continual-learning path.
+The benchmark uses generated images, templated text, and five discrete actions. It has
+no live camera, simulator, humanoid embodiment, pretrained VLA weights, or speech
+recognition. Its evidence concerns only deterministic synthetic task stages. The final
+three-seed result shows lower mean forgetting with replay alongside lower final average
+accuracy, so it cannot support a broad performance-improvement claim.

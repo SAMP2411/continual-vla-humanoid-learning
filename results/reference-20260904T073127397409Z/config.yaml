@@ -1,0 +1,12 @@
+batch_size: 32
+epochs_per_stage: 4
+image_size: 32
+learning_rate: 0.003
+lora_alpha: 8.0
+lora_rank: 4
+output_dir: results
+replay_capacity: 192
+replay_ratio: 0.35
+seed: 21
+test_samples_per_action: 30
+train_samples_per_action: 96

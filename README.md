@@ -1,145 +1,51 @@
-# Continual VLA Learning for Humanoid Robot Manipulation
+# Compact Continual Vision-Language Policy Benchmark
 
-**Status: active development — first continual-learning foundation implemented.**
+**Status: locally complete benchmark; remote CI and release pending.**
 
-A reproducible research project for studying lifelong skill acquisition in
-vision-language-action (VLA) robot policies. The current reference backend receives a synthetic
-tabletop image and a natural-language command, then predicts one of five discrete
-actions: `left`, `right`, `up`, `down`, or `grasp`.
+This repository measures catastrophic forgetting in a small, CPU-compatible policy
+that consumes a generated RGB tabletop observation and a natural-language command,
+then predicts one of five discrete actions. It compares sequential low-rank adaptation
+with and without bounded Experience Replay.
 
-The project compares sequential parameter-efficient fine-tuning with and without
-Experience Replay. It is intentionally small enough to run on a laptop CPU.
+> Scope: this is a compact synthetic benchmark. It is **not** a pretrained VLA, robot
+> simulator, humanoid controller, speech system, or physical-robot project. See
+> [scope change](docs/scope_change.md).
 
-The end-to-end target is parameter-efficient adaptation of a pretrained VLA in a
-manipulation simulator, followed by a humanoid-simulation extension. The compact
-backend implemented first provides a fast, deterministic test bed for PEFT,
-Experience Replay, sequential evaluation, and forgetting metrics before the
-compute-heavy integration.
+## Reproduce
 
-> **Truthful scope:** The current milestone is not a humanoid deployment and not
-> a safety-certified robot controller. It does not claim that pretrained-VLA or
-> humanoid-simulation integration is already complete.
-
-## Implementation status
-
-| Capability | Status |
-|---|---|
-| Vision + language conditioned action policy | Implemented (compact reference backend) |
-| LoRA-style parameter-efficient adaptation | Implemented |
-| Sequential task curriculum and Experience Replay | Implemented |
-| Accuracy and catastrophic-forgetting metrics | Implemented |
-| Pretrained VLA integration | Next milestone |
-| Manipulation simulator and continuous actions | Next milestone |
-| Humanoid simulation and ROS 2 interface | Planned extension |
-
-## Why this project
-
-Continual robot learning must add new skills without catastrophically forgetting
-old ones. This repository demonstrates the mechanics needed to investigate that
-problem:
-
-- visual observations and language-conditioned action prediction;
-- a frozen multimodal backbone with trainable LoRA adapters;
-- sequential learning across task groups;
-- bounded Experience Replay;
-- accuracy matrices and task-forgetting measurements;
-- deterministic data generation and experiment configuration.
-
-## Architecture
-
-```mermaid
-flowchart LR
-    I[Tabletop image] --> V[CNN encoder]
-    C[Language command] --> T[Text encoder]
-    V --> F[Fusion]
-    T --> F
-    F --> L[LoRA action head]
-    L --> A[Discrete action]
-    R[Replay buffer] --> U[Sequential update]
-    U --> L
-```
-
-## Continual-learning protocol
-
-The synthetic curriculum contains three stages:
-
-1. horizontal motion: `left`, `right`;
-2. vertical motion: `up`, `down`;
-3. manipulation: `grasp`.
-
-After every stage, the policy is evaluated on every task seen so far. Two runs
-are compared:
-
-- **sequential PEFT:** current-stage samples only;
-- **PEFT + replay:** current-stage samples mixed with a bounded memory of older
-  samples.
-
-For task \(j\), forgetting is reported as the best previous accuracy minus the
-final accuracy on that task.
-
-## Quick start
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python -m lifelong_vla.train --config configs/debug.yaml
-```
-
-Run the tests:
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-The training command creates a unique `results/reference-.../` directory containing a
-config snapshot, JSON metrics, and a comparison plot. It never overwrites a prior run.
-Use `configs/benchmark.yaml` only for the larger compact-reference run; neither config
-is a final humanoid benchmark.
-
-Record the current machine before selecting a simulator/VLA stack:
-
-```bash
+```powershell
+python -m pip install -e ".[dev]"
 python scripts/system_report.py --output docs/system_report.json
+python -m ruff check lifelong_vla scripts tests
+python -m unittest discover -s tests -v
+python scripts/run_benchmark.py --config configs/benchmark.yaml
+python scripts/make_report.py --results results
 ```
 
-## Repository structure
+The benchmark uses fixed train seeds `7`, `21`, and `42`, three sequential task stages,
+and 30 held-out examples per action. Each run receives a unique directory with an
+immutable config hash, raw JSONL evaluation records, metrics, plot, and `COMPLETE`
+marker. The report script rejects missing seed coverage and regenerates the compact
+summary files from raw records.
 
-```text
-configs/                 Experiment settings
-docs/                    Verified scope, architecture, decisions, and limitations
-scripts/system_report.py Hardware and PyTorch capability report
-lifelong_vla/
-  data.py                Deterministic synthetic scenes and commands
-  model.py               Multimodal policy and LoRA linear layer
-  replay.py              Reservoir-sampling replay memory
-  metrics.py             Accuracy matrix and forgetting calculation
-  train.py               Sequential-training experiment
-tests/                   Unit and smoke tests
-results/                 Generated experiment outputs (not committed)
-```
+## Verified local result
 
-## Expected experiment output
+Across the three fixed seeds, sequential PEFT has mean final accuracy 0.2074 and mean
+forgetting 0.1981. PEFT with replay has mean final accuracy 0.1722 and mean forgetting
+0.1296. Thus replay reduced mean forgetting in this run set but did not improve final
+average accuracy. Full values, cell-level 95% normal-approximation intervals, and
+latency are in [results/summary.json](results/summary.json).
 
-The script creates a stage-by-task accuracy matrix for each method and reports:
+## Components
 
-- final average accuracy;
-- average forgetting;
-- trainable and total parameter counts;
-- replay-buffer occupancy.
+- `lifelong_vla/data.py`: deterministic synthetic images and language commands.
+- `lifelong_vla/model.py`: frozen compact multimodal backbone and trainable LoRA head.
+- `lifelong_vla/replay.py`: bounded reservoir-sampling replay.
+- `lifelong_vla/train.py`: sequential training, held-out evaluation, and raw records.
+- `scripts/run_benchmark.py`: frozen three-seed benchmark runner.
+- `scripts/make_report.py`: raw-record summary/plot generator.
 
-No benchmark values are stated in this README before the experiment has been run
-in a fully provisioned PyTorch environment.
+## Limitations
 
-## Next steps toward a stronger robotics study
-
-- replace synthetic scenes with demonstrations from LeRobot or RLBench;
-- initialize the encoders from a genuinely pretrained vision-language policy;
-- predict continuous end-effector actions;
-- connect the policy to MuJoCo, Isaac Lab, or ROS 2;
-- add verbal commands through automatic speech recognition;
-- evaluate on a physical manipulator or humanoid platform.
-
-## License
-
-MIT
+This benchmark’s data, action space, and model are intentionally small. Its results do
+not transfer automatically to pretrained VLAs, simulators, or robotic systems.

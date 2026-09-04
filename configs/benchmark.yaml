@@ -1,7 +1,7 @@
-seed: 42
+seeds: [7, 21, 42]
 image_size: 32
 train_samples_per_action: 96
-test_samples_per_action: 48
+test_samples_per_action: 30
 batch_size: 32
 epochs_per_stage: 4
 learning_rate: 0.003

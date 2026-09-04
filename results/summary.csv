@@ -1,0 +1,3 @@
+method,seeds,final_average_accuracy_mean,average_forgetting_mean,total_parameters,trainable_parameters,trainable_percent,replay_occupancy
+sequential_peft,"[7, 21, 42]",0.2074074074074074,0.19814814814814816,16857,212,1.2576377765913271,192
+sequential_peft_replay,"[7, 21, 42]",0.1722222222222222,0.12962962962962962,16857,212,1.2576377765913271,192

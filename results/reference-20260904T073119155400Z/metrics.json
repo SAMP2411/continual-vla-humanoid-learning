@@ -1,0 +1,83 @@
+{
+  "config": {
+    "batch_size": 32,
+    "epochs_per_stage": 4,
+    "image_size": 32,
+    "learning_rate": 0.003,
+    "lora_alpha": 8.0,
+    "lora_rank": 4,
+    "output_dir": "results",
+    "replay_capacity": 192,
+    "replay_ratio": 0.35,
+    "seed": 7,
+    "test_samples_per_action": 30,
+    "train_samples_per_action": 96
+  },
+  "runtime": {
+    "python": "3.10.11",
+    "torch": "2.13.0+cpu",
+    "device": "cpu"
+  },
+  "results": {
+    "sequential_peft": {
+      "accuracy_matrix": [
+        [
+          0.5
+        ],
+        [
+          0.16666666666666666,
+          0.15
+        ],
+        [
+          0.0,
+          0.0,
+          0.7666666666666667
+        ]
+      ],
+      "summary": {
+        "final_average_accuracy": 0.2555555555555556,
+        "average_forgetting": 0.21666666666666667,
+        "forgetting": [
+          0.5,
+          0.15,
+          0.0
+        ]
+      },
+      "parameters": {
+        "total": 16857,
+        "trainable": 212
+      },
+      "replay_occupancy": 192
+    },
+    "sequential_peft_replay": {
+      "accuracy_matrix": [
+        [
+          0.5
+        ],
+        [
+          0.26666666666666666,
+          0.21666666666666667
+        ],
+        [
+          0.16666666666666666,
+          0.05,
+          0.1
+        ]
+      ],
+      "summary": {
+        "final_average_accuracy": 0.10555555555555556,
+        "average_forgetting": 0.16666666666666666,
+        "forgetting": [
+          0.33333333333333337,
+          0.16666666666666669,
+          0.0
+        ]
+      },
+      "parameters": {
+        "total": 16857,
+        "trainable": 212
+      },
+      "replay_occupancy": 192
+    }
+  }
+}

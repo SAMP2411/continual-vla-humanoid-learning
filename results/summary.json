@@ -1,0 +1,147 @@
+{
+  "runs": [
+    "results\\reference-20260904T073119155400Z",
+    "results\\reference-20260904T073127397409Z",
+    "results\\reference-20260904T073134186640Z"
+  ],
+  "cells": [
+    {
+      "method": "sequential_peft",
+      "stage": 1,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.5833333333333334,
+      "ci95": 0.07202323013453607,
+      "median_latency_ms": 0.05205833333548071
+    },
+    {
+      "method": "sequential_peft",
+      "stage": 2,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.18888888888888888,
+      "ci95": 0.057182508093160944,
+      "median_latency_ms": 0.020813333333080664
+    },
+    {
+      "method": "sequential_peft",
+      "stage": 2,
+      "task": "stage_2",
+      "episodes": 180,
+      "success": 0.19444444444444445,
+      "ci95": 0.057818302502342635,
+      "median_latency_ms": 0.025835000000521784
+    },
+    {
+      "method": "sequential_peft",
+      "stage": 3,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.06111111111111111,
+      "ci95": 0.034993469898369906,
+      "median_latency_ms": 0.019814999999804666
+    },
+    {
+      "method": "sequential_peft",
+      "stage": 3,
+      "task": "stage_2",
+      "episodes": 180,
+      "success": 0.12777777777777777,
+      "ci95": 0.04877093233554096,
+      "median_latency_ms": 0.018873333332673308
+    },
+    {
+      "method": "sequential_peft",
+      "stage": 3,
+      "task": "stage_3",
+      "episodes": 90,
+      "success": 0.43333333333333335,
+      "ci95": 0.10237872078286485,
+      "median_latency_ms": 0.052489999999731175
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 1,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.5833333333333334,
+      "ci95": 0.07202323013453607,
+      "median_latency_ms": 0.023616666665778514
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 2,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.3888888888888889,
+      "ci95": 0.0712184760479319,
+      "median_latency_ms": 0.02066166666357579
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 2,
+      "task": "stage_2",
+      "episodes": 180,
+      "success": 0.17222222222222222,
+      "ci95": 0.0551596237096619,
+      "median_latency_ms": 0.018348333333051414
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 3,
+      "task": "stage_1",
+      "episodes": 180,
+      "success": 0.25,
+      "ci95": 0.06325872798805447,
+      "median_latency_ms": 0.01968999999917287
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 3,
+      "task": "stage_2",
+      "episodes": 180,
+      "success": 0.16666666666666666,
+      "ci95": 0.05444444444444445,
+      "median_latency_ms": 0.015908333333906437
+    },
+    {
+      "method": "sequential_peft_replay",
+      "stage": 3,
+      "task": "stage_3",
+      "episodes": 90,
+      "success": 0.1,
+      "ci95": 0.06198064213930023,
+      "median_latency_ms": 0.0257366666649735
+    }
+  ],
+  "methods": [
+    {
+      "method": "sequential_peft",
+      "seeds": [
+        7,
+        21,
+        42
+      ],
+      "final_average_accuracy_mean": 0.2074074074074074,
+      "average_forgetting_mean": 0.19814814814814816,
+      "total_parameters": 16857,
+      "trainable_parameters": 212,
+      "trainable_percent": 1.2576377765913271,
+      "replay_occupancy": 192
+    },
+    {
+      "method": "sequential_peft_replay",
+      "seeds": [
+        7,
+        21,
+        42
+      ],
+      "final_average_accuracy_mean": 0.1722222222222222,
+      "average_forgetting_mean": 0.12962962962962962,
+      "total_parameters": 16857,
+      "trainable_parameters": 212,
+      "trainable_percent": 1.2576377765913271,
+      "replay_occupancy": 192
+    }
+  ]
+}
